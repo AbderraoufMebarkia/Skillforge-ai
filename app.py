@@ -208,7 +208,7 @@ with tab_main:
 
 with tab_archive:
     if not st.session_state.projects_archive:
-        st.info(t('no_projects') if st.session_state.ui_lang == 'en' else "لا توجد مشاريع مسبقة.")
+        st.info("No projects in the archive yet." if st.session_state.ui_lang == 'en' else "لا توجد مشاريع في الأرشيف حالياً.")
     else:
         for proj in reversed(st.session_state.projects_archive):
             with st.expander(f"📁 {proj['name']}"):
