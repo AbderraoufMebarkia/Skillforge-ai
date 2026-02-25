@@ -19,7 +19,7 @@ if API_KEY:
     genai.configure(api_key=API_KEY)
     
     # اختيار النموذج اللغوي
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
 
     # ==========================================
     # 3. واجهة إدخال المهارة
