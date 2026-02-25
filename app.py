@@ -1,201 +1,263 @@
 import streamlit as st
 from groq import Groq
 import json
+from datetime import datetime
 
 # ==========================================
-# 1. إعدادات الصفحة المتقدمة للاستوديوهات
+# 1. إعدادات الصفحة المتقدمة (Studio Minimalist)
 # ==========================================
-st.set_page_config(page_title="CampaignOS | Studio Pipeline", page_icon="🎬", layout="wide")
+st.set_page_config(page_title="Studio OS | Apex Edition", page_icon="⬛", layout="wide")
 
 # ==========================================
-# 2. حقن تصميم CSS (Dark Studio UI)
+# 2. حقن تصميم CSS (Ultra-Minimalist / Studio Grade)
 # ==========================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Tajawal:wght@300;400;700&display=swap');
     
     html, body, [class*="css"] {
-        font-family: 'Tajawal', sans-serif;
-        direction: rtl;
-        text-align: right;
+        font-family: 'Inter', 'Tajawal', sans-serif;
+        background-color: #0A0A0A;
+        color: #E0E0E0;
     }
     .stApp {
-        background-color: #050505;
-        background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 80%);
+        background-color: #0A0A0A;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #FFFFFF;
+        font-weight: 300;
+        letter-spacing: -0.5px;
     }
     .hero-title {
-        font-size: 3.8rem;
-        font-weight: 900;
-        background: -webkit-linear-gradient(45deg, #00F2FE, #4FACFE);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin-bottom: 0px;
-        letter-spacing: -1px;
-    }
-    .hero-subtitle {
-        text-align: center;
-        color: #8B9BB4;
-        font-size: 1.3rem;
-        margin-bottom: 40px;
+        font-size: 3rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
     }
     .stButton>button {
-        background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
-        color: #000;
-        border: none;
-        border-radius: 6px;
-        padding: 15px;
-        font-size: 1.3rem;
-        font-weight: 900;
+        background-color: #FFFFFF;
+        color: #000000;
+        border: 1px solid #FFFFFF;
+        border-radius: 2px;
+        padding: 10px 20px;
+        font-weight: bold;
         text-transform: uppercase;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
     .stButton>button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 10px 25px rgba(0, 242, 254, 0.4);
+        background-color: #000000;
+        color: #FFFFFF;
     }
     .metric-card {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 8px;
-        padding: 25px;
-        margin-bottom: 20px;
+        background: #111111;
+        border: 1px solid #222222;
+        border-radius: 2px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-left: 3px solid #555555;
     }
     div[data-testid="stSidebar"] {
-        background-color: #0A0A0F;
-        border-left: 1px solid rgba(255,255,255,0.05);
+        background-color: #050505;
+        border-right: 1px solid #222222;
     }
+    .lang-toggle { font-size: 0.8rem; color: #888; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. الشريط الجانبي (Studio Settings)
+# 3. نظام إدارة الحالة (State Management)
+# ==========================================
+if 'projects_archive' not in st.session_state:
+    st.session_state.projects_archive = []
+if 'ui_lang' not in st.session_state:
+    st.session_state.ui_lang = "ar"
+
+# ==========================================
+# 4. قاموس اللغات (Localization Dictionary)
+# ==========================================
+loc = {
+    "ar": {
+        "title": "نظام الاستوديو",
+        "subtitle": "هندسة وإدارة المشاريع الإبداعية الكبرى",
+        "sidebar_title": "إعدادات النظام",
+        "api_key": "مفتاح Groq API",
+        "ui_lang": "لغة الواجهة / UI Language",
+        "out_lang": "لغة التوليد (المخرجات)",
+        "custom_steps": "إضافة مراحل مخصصة (اختياري)",
+        "custom_steps_help": "مثال: هندسة الصوت، التسويق الفيروسي، استخراج التراخيص...",
+        "brief": "موجز المشروع (Brief)",
+        "brief_ph": "صف المشروع، الهدف، الميزانية التقريبية، والمعايير المطلوبة...",
+        "generate_btn": "توليد هيكل المشروع",
+        "tab_new": "مشروع جديد",
+        "tab_archive": "الأرشيف والمشاركة",
+        "processing": "جاري معالجة البيانات وبناء الهيكل...",
+        "success": "تم إنشاء المشروع بنجاح",
+        "download": "تحميل المشروع (JSON)",
+        "no_projects": "لا توجد مشاريع في الأرشيف حالياً."
+    },
+    "en": {
+        "title": "STUDIO OS",
+        "subtitle": "Enterprise Creative Pipeline & Project Engineering",
+        "sidebar_title": "System Config",
+        "api_key": "Groq API Key",
+        "ui_lang": "UI Language / لغة الواجهة",
+        "out_lang": "Output Language",
+        "custom_steps": "Inject Custom Pipeline Steps",
+        "custom_steps_help": "e.g., Sound Design, Viral Marketing, Legal Clearances...",
+        "brief": "Project Brief",
+        "brief_ph": "Describe the project, objective, estimated budget, and standards...",
+        "generate_btn": "Generate Project Architecture",
+        "tab_new": "New Project",
+        "tab_archive": "Archive & Share",
+        "processing": "Processing data and building architecture...",
+        "success": "Project generated successfully",
+        "download": "Download Project (JSON)",
+        "no_projects": "No projects in the archive yet."
+    }
+}
+
+# اختصار لاستدعاء النصوص حسب اللغة
+def t(key): return loc[st.session_state.ui_lang][key]
+
+# ==========================================
+# 5. الشريط الجانبي (Sidebar & Config)
 # ==========================================
 with st.sidebar:
-    st.markdown("### 🎛️ لوحة تحكم الاستوديو")
-    API_KEY = st.text_input("🔑 مفتاح Groq API:", type="password")
+    st.markdown(f"### ⚙️ {t('sidebar_title')}")
+    
+    # تبديل لغة الواجهة
+    new_lang = st.radio(t('ui_lang'), ["ar", "en"], index=0 if st.session_state.ui_lang == "ar" else 1, horizontal=True)
+    if new_lang != st.session_state.ui_lang:
+        st.session_state.ui_lang = new_lang
+        st.rerun()
+        
+    API_KEY = st.text_input(t('api_key'), type="password")
     st.markdown("---")
-    st.markdown("💡 **توجيه المخرج:** صِف المنتج، العميل المستهدف (مثال: شركة إلكترونيات، علامة طبية/مكملات، أو سيارات)، والمدة الزمنية المطلوبة للإعلان.")
+    
+    output_language = st.selectbox(t('out_lang'), ["العربية", "English"])
+    custom_pipeline = st.text_input(t('custom_steps'), help=t('custom_steps_help'))
 
-st.markdown('<h1 class="hero-title">CampaignOS 🎬</h1>', unsafe_allow_html=True)
-st.markdown('<p class="hero-subtitle">محرك الذكاء الاصطناعي لهندسة الحملات الإعلانية السينمائية وعروض الـ CGI الكبرى</p>', unsafe_allow_html=True)
+# ==========================================
+# 6. الواجهة الرئيسية (Main Interface)
+# ==========================================
+st.markdown(f'<div class="hero-title">{t("title")}</div>', unsafe_allow_html=True)
+st.markdown(f'<div style="color:#666; margin-bottom:30px;">{t("subtitle")}</div>', unsafe_allow_html=True)
 
-if API_KEY:
-    client = Groq(api_key=API_KEY)
+# نظام التبويبات (Tabs for UX)
+tab_main, tab_archive = st.tabs([t('tab_new'), t('tab_archive')])
 
-    # placeholder مصمم خصيصاً ليتناسب مع مستوى الاحتراف العالي (CGI/Products/Cinematic)
-    user_skill = st.text_area(
-        "📝 أدخل الـ Brief (موجز المشروع):", 
-        placeholder="مثال: أريد بناء مقترح لحملة إعلانية CGI بالكامل لإطلاق شاشة تلفزيون ذكي بتقنية متطورة. الإعلان يجب أن يكون سينمائياً، يركز على المشاهد التشريحية الداخلية (Exploded views) لإبراز قوة المعالج، واستعراض أداء الـ 4K، مع تسعير لشركة إلكترونيات كبرى...",
-        height=140
-    )
-
-    if st.button("🎬 توليد المعالجة السينمائية (Pitch Deck)", use_container_width=True):
-        if user_skill:
-            with st.spinner("🎞️ يتم الآن بناء الستوري بورد، هندسة الـ Pipeline، وتسعير المشروع... يرجى الانتظار."):
-                
-                # ==========================================
-                # 4. محرك المخرج السينمائي (The Director Prompt)
-                # ==========================================
-                prompt = f"""
-                أنت الآن تعمل كـ (Executive Creative Director) و (CGI Pipeline Technical Director) في استوديو إعلانات عالمي في هوليوود.
-                مهمتك بناء مقترح حملة إعلانية سينمائية شاملة (Pitch Deck) بناءً على هذا الموجز: {user_skill}
-                
-                يجب أن يكون الرد حصرياً بصيغة JSON وفق هذا الهيكل المعقد (باللغة العربية الفصحى وبمصطلحات تقنية فنية دقيقة):
-                {{
-                    "creative_treatment": {{
-                        "campaign_title": "اسم ملحمي للحملة",
-                        "core_concept": "الفكرة الجوهرية (في سطرين)",
-                        "visual_metaphor": "الاستعارة البصرية (كيف سنعبر عن الفكرة بصرياً؟)",
-                        "lighting_and_mood": "هندسة الإضاءة والمزاج (مثال: إضاءة دراماتيكية عالية التباين، ألوان نيون...)"
-                    }},
-                    "storyboard_sequence": [
-                        {{"shot": "1. الافتتاحية (The Hook)", "camera_movement": "حركة الكاميرا", "action": "وصف دقيق لما يحدث في الـ CGI"}},
-                        {{"shot": "2. بناء التوتر (The Build-up)", "camera_movement": "حركة الكاميرا", "action": "وصف دقيق لما يحدث"}},
-                        {{"shot": "3. الذروة (The Climax / Exploded View)", "camera_movement": "حركة الكاميرا", "action": "وصف دقيق للقطة التقنية"}},
-                        {{"shot": "4. الإغلاق (The Packshot)", "camera_movement": "حركة الكاميرا", "action": "اللقطة النهائية للمنتج مع الشعار"}}
-                    ],
-                    "technical_pipeline": {{
-                        "modeling_and_assets": "كيف سيتم بناء المجسمات والخامات؟",
-                        "animation_dynamics": "نوع التحريك (مثال: محاكاة سوائل، Geometry Nodes، ديناميكا معقدة)",
-                        "rendering_engine": "محرك التصيير المقترح ولماذا؟ (مثال: Cycles للواقعية المفرطة)",
-                        "ai_integration": "كيف سنستخدم أدوات الذكاء الاصطناعي (مثل التوليد السريع للخامات أو النماذج المبدئية) لتسريع مسار العمل؟"
-                    }},
-                    "commercial_proposal": {{
-                        "scope_of_work": "نطاق العمل الرسمي (ماذا سنسلم للعميل؟)",
-                        "estimated_timeline": "الجدول الزمني للإنتاج بالأسابيع",
-                        "budget_tiers": [
-                            {{"tier": "الباقة الأساسية (Standard CGI)", "price": "السعر المتوقع بالدولار", "includes": "ماذا تشمل؟"}},
-                            {{"tier": "الباقة السينمائية (Premium 4K + Interactive WebGL)", "price": "السعر المتوقع بالدولار", "includes": "ماذا تشمل؟"}}
-                        ]
-                    }}
-                }}
-                """
-                
-                try:
-                    chat_completion = client.chat.completions.create(
-                        messages=[
-                            {"role": "system", "content": "أنت مخرج إبداعي عالمي وخبير CGI. تخرج البيانات بصيغة JSON فقط."},
-                            {"role": "user", "content": prompt}
+with tab_main:
+    if API_KEY:
+        client = Groq(api_key=API_KEY)
+        
+        # تغيير اتجاه النص بناءً على لغة الواجهة
+        text_dir = "rtl" if st.session_state.ui_lang == "ar" else "ltr"
+        st.markdown(f'<div style="direction: {text_dir};">', unsafe_allow_html=True)
+        
+        brief = st.text_area(t('brief'), placeholder=t('brief_ph'), height=150)
+        
+        if st.button(t('generate_btn'), use_container_width=True):
+            if brief:
+                with st.spinner(t('processing')):
+                    
+                    # ==========================================
+                    # 7. محرك القيود غير المرئية (The Apex Prompt)
+                    # ==========================================
+                    prompt = f"""
+                    You are an Elite Executive Producer and Technical Pipeline Architect at a Tier-1 Hollywood Studio.
+                    Project Brief: {brief}
+                    Additional Required Pipeline Steps: {custom_pipeline if custom_pipeline else "None"}
+                    Target Output Language: {output_language}
+                    
+                    HIDDEN CONSTRAINTS (MANDATORY):
+                    1. Use global enterprise standards (ISO quality management, SMPTE for technicals).
+                    2. Tone must be hyper-professional, brutally realistic, and analytical. No marketing fluff.
+                    3. Budgets must be realistic for high-end studio work (tier 1: MVP, tier 2: Studio Standard, tier 3: Blockbuster).
+                    4. If 'Additional Required Pipeline Steps' are provided, you MUST integrate them logically into the workflow.
+                    
+                    OUTPUT FORMAT: STRICT JSON EXACTLY matching this structure:
+                    {{
+                        "executive_summary": {{"project_name": "String", "logline": "String", "core_challenge": "String"}},
+                        "technical_pipeline": [
+                            {{"phase": "String", "tools_used": "String", "execution_details": "String"}}
                         ],
-                        model="llama-3.3-70b-versatile",
-                        temperature=0.8,
-                        max_tokens=6500,
-                        response_format={"type": "json_object"}
-                    )
+                        "custom_injected_steps": "Explain how the user's additional steps were integrated",
+                        "financial_scoping": [
+                            {{"tier": "String", "estimated_cost": "String", "deliverables": "String"}}
+                        ],
+                        "risk_assessment": ["Risk 1", "Risk 2"]
+                    }}
+                    """
                     
-                    data = json.loads(chat_completion.choices[0].message.content)
-                    
-                    # ==========================================
-                    # 5. عرض النتائج (Studio Pitch Deck)
-                    # ==========================================
-                    st.success("تم الانتهاء من هندسة ملف المشروع بنجاح! 🏆")
-                    
-                    tab1, tab2, tab3, tab4 = st.tabs(["👁️ المعالجة البصرية", "🎞️ الستوري بورد", "⚙️ الـ Pipeline التقني", "💼 العرض المالي"])
-                    
-                    with tab1:
-                        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                        st.markdown(f"## 🎬 {data['creative_treatment']['campaign_title']}")
-                        st.markdown("---")
-                        st.markdown(f"**🧠 الفكرة الجوهرية:** {data['creative_treatment']['core_concept']}")
-                        st.markdown(f"**🌌 الاستعارة البصرية:** {data['creative_treatment']['visual_metaphor']}")
-                        st.markdown(f"**💡 الإضاءة والمزاج (Lighting & Mood):** {data['creative_treatment']['lighting_and_mood']}")
-                        st.markdown('</div>', unsafe_allow_html=True)
+                    try:
+                        chat_completion = client.chat.completions.create(
+                            messages=[
+                                {"role": "system", "content": "You output strict JSON only."},
+                                {"role": "user", "content": prompt}
+                            ],
+                            model="llama-3.3-70b-versatile",
+                            temperature=0.3, # درجة حرارة منخفضة لضمان الدقة والاحترافية والواقعية
+                            max_tokens=6000,
+                            response_format={"type": "json_object"}
+                        )
                         
-                    with tab2:
-                        st.markdown("### 🎥 تسلسل اللقطات (Cinematic Sequence)")
-                        for shot in data['storyboard_sequence']:
-                            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                            st.markdown(f"#### 🎬 {shot['shot']}")
-                            st.info(f"**📷 حركة الكاميرا:** {shot['camera_movement']}")
-                            st.write(f"**⚙️ الأكشن (CGI):** {shot['action']}")
-                            st.markdown('</div>', unsafe_allow_html=True)
-                                    
-                    with tab3:
-                        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                        st.subheader("🛠️ مسار العمل الهندسي (Technical Pipeline)")
-                        st.write(f"**🧱 النمذجة والخامات (Assets & Texturing):** {data['technical_pipeline']['modeling_and_assets']}")
-                        st.write(f"**🌪️ التحريك والديناميكا (Animation & Dynamics):** {data['technical_pipeline']['animation_dynamics']}")
-                        st.success(f"**🖥️ محرك التصيير (Rendering):** {data['technical_pipeline']['rendering_engine']}")
-                        st.warning(f"**🤖 تسريع الإنتاج بالـ AI:** {data['technical_pipeline']['ai_integration']}")
-                        st.markdown('</div>', unsafe_allow_html=True)
+                        project_data = json.loads(chat_completion.choices[0].message.content)
                         
-                    with tab4:
-                        st.subheader("💼 مقترح العرض التجاري (Commercial Pitch)")
-                        st.markdown(f"**📋 نطاق العمل (Scope of Work):** {data['commercial_proposal']['scope_of_work']}")
-                        st.markdown(f"**⏱️ الإطار الزمني للإنتاج:** {data['commercial_proposal']['estimated_timeline']}")
-                        st.markdown("---")
-                        st.markdown("### 💰 هيكل التسعير الاستراتيجي")
-                        for tier in data['commercial_proposal']['budget_tiers']:
+                        # حفظ في الأرشيف
+                        project_entry = {
+                            "id": datetime.now().strftime("%Y%m%d_%H%M%S"),
+                            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                            "name": project_data['executive_summary']['project_name'],
+                            "data": project_data
+                        }
+                        st.session_state.projects_archive.append(project_entry)
+                        
+                        st.success(t('success'))
+                        
+                        # عرض البيانات
+                        st.markdown(f"## 📄 {project_data['executive_summary']['project_name']}")
+                        st.markdown(f"**Logline:** {project_data['executive_summary']['logline']}")
+                        
+                        st.markdown("### ⚙️ Pipeline")
+                        for step in project_data['technical_pipeline']:
                             st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                            st.markdown(f"#### 💎 {tier['tier']}")
-                            st.success(f"**التكلفة المتوقعة:** {tier['price']}")
-                            st.write(f"**المخرجات:** {tier['includes']}")
+                            st.markdown(f"**{step['phase']}**")
+                            st.markdown(f"*Tools:* `{step['tools_used']}`")
+                            st.markdown(f"> {step['execution_details']}")
                             st.markdown('</div>', unsafe_allow_html=True)
+                            
+                        st.markdown("### 💰 Financial Scoping")
+                        for tier in project_data['financial_scoping']:
+                            st.markdown(f"- **{tier['tier']}** | {tier['estimated_cost']} | *{tier['deliverables']}*")
+                            
+                    except Exception as e:
+                        st.error(f"Error / خطأ: {e}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.warning("Please enter your API Key in the sidebar / يرجى إدخال مفتاح API في القائمة الجانبية")
 
-                except Exception as e:
-                    st.error(f"حدث خطأ أثناء هندسة الملف. يرجى مراجعة الموجز والمحاولة مجدداً. التفاصيل التقنية: {e}")
-        else:
-            st.warning("يرجى إدخال موجز المشروع (Brief) للبدء في هندسة الحملة.")
-else:
-    st.info("👈 يرجى إدخال مفتاح Groq API في القائمة الجانبية للبدء.")
+# ==========================================
+# 8. واجهة الأرشيف والمشاركة (Archive & Share)
+# ==========================================
+with tab_archive:
+    if not st.session_state.projects_archive:
+        st.info(t('no_projects'))
+    else:
+        for proj in reversed(st.session_state.projects_archive):
+            with st.expander(f"📁 {proj['name']} - ({proj['date']})"):
+                json_string = json.dumps(proj['data'], indent=4, ensure_ascii=False)
+                
+                # زر تحميل كملف JSON للمشاركة
+                st.download_button(
+                    label=t('download'),
+                    file_name=f"project_{proj['id']}.json",
+                    mime="application/json",
+                    data=json_string,
+                    key=f"dl_{proj['id']}"
+                )
+                
+                # عرض الكود لمراجعته برمجياً
+                st.code(json_string, language="json")
