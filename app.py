@@ -63,11 +63,11 @@ def call_grok(prompt, system_prompt="You are an elite VFX & Film Studio AI Assis
         return "⚠️ Error: XAI_API_KEY environment variable not set."
     
     headers = {
-    "Authorization": f"Bearer {api_key}",
-    "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
     }
     payload = {
-        "model": "grok-2-1212", # Update model name based on current xAI docs
+        "model": "grok-2-latest",  # تم التحديث لأحدث اسم نموذج مستقر
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
@@ -80,11 +80,10 @@ def call_grok(prompt, system_prompt="You are an elite VFX & Film Studio AI Assis
         response.raise_for_status()
         return response.json()['choices'][0]['message']['content']
     except Exception as e:
-    # سيطبع لك هذا السطر رد السيرفر بالكامل
-    if hasattr(e, 'response') and e.response is not None:
-        return f"⚠️ AI Error Details: {e.response.text}"
-    return f"⚠️ AI Engine Error: {str(e)}"
-
+        # هنا يجب أن يكون الكود مُزاحاً لليمين (4 مسافات)
+        if hasattr(e, 'response') and e.response is not None:
+            return f"⚠️ AI Error Details: {e.response.text}"
+        return f"⚠️ AI Engine Error: {str(e)}"
 # ==========================================
 # 4. MODULES (VIEWS)
 # ==========================================
